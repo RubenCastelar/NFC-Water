@@ -14,66 +14,92 @@
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="assets/icon.svg" />
-    <link rel="stylesheet" href="styles.css?v=2" />
+    <link rel="stylesheet" href="styles.css?v=4" />
     <title>Agua NFC</title>
   </head>
   <body>
     <main class="app-shell">
-      <section class="hero">
-        <div>
+      <section class="hero-panel">
+        <div class="hero-copy">
           <p class="eyebrow">Agua NFC</p>
           <h1 id="todayLiters">0.0 L</h1>
           <p class="subtitle">Hoy</p>
+          <p id="todayDetail" class="today-detail">0 de 4.0 litros</p>
           <p id="syncStatus" class="sync-status">Conectando con Supabase...</p>
+          <div class="hero-actions">
+            <button id="quickSubtractButton" class="ghost-button" type="button" aria-label="Restar 600 mililitros">
+              -600 ml
+            </button>
+            <button id="quickAddButton" class="primary-button" type="button" aria-label="Añadir 600 mililitros">
+              +600 ml
+            </button>
+          </div>
         </div>
-        <button id="quickAddButton" class="primary-button" type="button" aria-label="Añadir 600 mililitros">
-          +600 ml
-        </button>
+
+        <div class="bottle-card" aria-label="Botella de 4 litros">
+          <div class="bottle">
+            <div id="bottleFill" class="bottle-fill"></div>
+            <div class="bottle-neck"></div>
+            <div class="bottle-markers">
+              <span>4L</span>
+              <span>3L</span>
+              <span>2L</span>
+              <span>1L</span>
+              <span>0L</span>
+            </div>
+          </div>
+          <p id="bottleCaption" class="bottle-caption">0% del objetivo de hoy</p>
+        </div>
       </section>
 
-      <section class="summary-grid" aria-label="Resumen">
-        <article class="metric-card">
-          <span class="metric-label">Semana</span>
+      <section class="stats-strip" aria-label="Resumen">
+        <article class="stat-chip">
+          <span class="stat-label">Semana</span>
           <strong id="weekLiters">0.0 L</strong>
         </article>
-        <article class="metric-card">
-          <span class="metric-label">Mes</span>
+        <article class="stat-chip">
+          <span class="stat-label">Mes</span>
           <strong id="monthLiters">0.0 L</strong>
         </article>
-        <article class="metric-card">
-          <span class="metric-label">Año</span>
+        <article class="stat-chip">
+          <span class="stat-label">Año</span>
           <strong id="yearLiters">0.0 L</strong>
         </article>
-        <article class="metric-card">
-          <span class="metric-label">Total</span>
+        <article class="stat-chip">
+          <span class="stat-label">Total</span>
           <strong id="allTimeLiters">0.0 L</strong>
         </article>
       </section>
 
       <section class="panel">
         <div class="panel-heading">
-          <h2>Últimos registros</h2>
+          <div>
+            <h2>Histórico</h2>
+            <p id="chartCaption" class="panel-caption">Semana actual</p>
+          </div>
+          <div class="period-tabs" role="tablist" aria-label="Periodo del gráfico">
+            <button class="period-tab active" type="button" data-period="week">Semana</button>
+            <button class="period-tab" type="button" data-period="month">Mes</button>
+            <button class="period-tab" type="button" data-period="year">Año</button>
+          </div>
+        </div>
+        <div id="historyChart" class="history-chart" aria-label="Gráfico histórico"></div>
+      </section>
+
+      <section class="panel panel-soft">
+        <div class="panel-heading">
+          <div>
+            <h2>Últimos registros</h2>
+            <p class="panel-caption">Tus últimos 8 toques o registros manuales</p>
+          </div>
         </div>
         <ul id="entriesList" class="entries-list" aria-live="polite"></ul>
       </section>
 
-      <section class="panel">
+      <section class="panel panel-soft">
         <div class="panel-heading">
-          <h2>Progreso semanal</h2>
-          <span id="weekTotalCaption" class="panel-caption">0.0 L esta semana</span>
+          <h2>NFC</h2>
         </div>
-        <div id="weekChart" class="week-chart" aria-label="Gráfico semanal"></div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-heading">
-          <h2>Instalación y NFC</h2>
-        </div>
-        <ol class="instructions">
-          <li>Añade esta web a la pantalla de inicio de tu iPhone.</li>
-          <li>Graba el NFC con la URL pública de esta app terminada en <code>?tap=1</code>.</li>
-          <li>Cada vez que acerques el iPhone, se guardarán 600 ml en Supabase y verás la app actualizada.</li>
-        </ol>
         <div class="url-box">
           <label for="nfcUrl">URL para grabar en el NFC</label>
           <div class="url-row">
@@ -83,7 +109,7 @@
         </div>
       </section>
 
-      <section class="panel danger-panel">
+      <section class="panel panel-soft">
         <div class="panel-heading">
           <h2>Datos</h2>
         </div>
@@ -95,6 +121,6 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-    <script src="app.js?v=3" defer></script>
+    <script src="app.js?v=5" defer></script>
   </body>
 </html>
