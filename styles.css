@@ -214,6 +214,7 @@ h2 {
   right: 0.8rem;
   bottom: 0.8rem;
   height: 0%;
+  max-height: calc(100% - 1.6rem);
   border-radius: 1.55rem 1.55rem 1rem 1rem;
   background:
     linear-gradient(180deg, rgba(116, 220, 255, 0.9), rgba(60, 189, 240, 0.68)),

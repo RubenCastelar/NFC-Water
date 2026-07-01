@@ -1,5 +1,5 @@
-const CACHE_NAME = "agua-nfc-cache-v6";
-const ASSETS = ["./", "./index.html", "./styles.css?v=4", "./app.js?v=5", "./manifest.webmanifest", "./assets/icon.svg"];
+const CACHE_NAME = "agua-nfc-cache-v7";
+const ASSETS = ["./", "./index.html", "./styles.css?v=5", "./app.js?v=5", "./manifest.webmanifest", "./assets/icon.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
