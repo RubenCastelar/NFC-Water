@@ -1,13 +1,19 @@
-const STORAGE_KEY = "agua-nfc-records-v1";
 const ENTRY_ML = 600;
+const SUPABASE_URL = "https://sexfmvdjosqzyatmopyy.supabase.co";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNleGZtdmRqb3NxenlhdG1vcHl5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MTQ4ODYsImV4cCI6MjA5ODQ5MDg4Nn0.DmGIru8Qqqc2zLrT9sYNzlf7O4OSvD4cpmiocytx6vE";
+const PROFILE_ID = "agua-personal-bf4f2e8d9a0647d8b7e0cfe6b0f4c7a1";
 
 const state = {
-  entries: loadEntries(),
+  entries: [],
+  isLoading: true,
+  isMutating: false,
   toastTimer: null,
 };
 
 const elements = {
   todayLiters: document.querySelector("#todayLiters"),
+  syncStatus: document.querySelector("#syncStatus"),
   weekLiters: document.querySelector("#weekLiters"),
   monthLiters: document.querySelector("#monthLiters"),
   yearLiters: document.querySelector("#yearLiters"),
@@ -18,66 +24,98 @@ const elements = {
   nfcUrl: document.querySelector("#nfcUrl"),
   toast: document.querySelector("#toast"),
   quickAddButton: document.querySelector("#quickAddButton"),
-  undoButton: document.querySelector("#undoButton"),
   copyUrlButton: document.querySelector("#copyUrlButton"),
   exportButton: document.querySelector("#exportButton"),
-  resetButton: document.querySelector("#resetButton"),
 };
 
-function loadEntries() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return parsed.filter((entry) => typeof entry?.timestamp === "number" && entry?.amountMl === ENTRY_ML);
-  } catch {
-    return [];
+function getHeaders() {
+  return {
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    "Content-Type": "application/json",
+  };
+}
+
+function getRestUrl(path, params = {}) {
+  const url = new URL(`/rest/v1/${path}`, SUPABASE_URL);
+  for (const [key, value] of Object.entries(params)) {
+    url.searchParams.set(key, value);
   }
+  return url;
 }
 
-function saveEntries() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.entries));
+async function fetchEntries() {
+  state.isLoading = true;
+  updateSyncStatus("Sincronizando...");
+  renderEntries();
+  syncControls();
+
+  const response = await fetch(
+    getRestUrl("water_entries", {
+      select: "id,amount_ml,source,created_at",
+      profile_id: `eq.${PROFILE_ID}`,
+      order: "created_at.desc",
+      limit: "10000",
+    }),
+    {
+      headers: getHeaders(),
+      cache: "no-store",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Supabase select failed with ${response.status}`);
+  }
+
+  const rows = await response.json();
+  state.entries = rows.map((row) => ({
+    id: row.id,
+    amountMl: row.amount_ml,
+    source: row.source,
+    timestamp: Date.parse(row.created_at),
+  }));
+  state.isLoading = false;
+  updateSyncStatus("Sincronizado");
+  render();
+  syncControls();
 }
 
-function addEntry(source) {
-  state.entries.unshift({
-    id: crypto.randomUUID(),
-    amountMl: ENTRY_ML,
-    source,
-    timestamp: Date.now(),
+async function createEntry(source) {
+  state.isMutating = true;
+  updateSyncStatus("Guardando...");
+  syncControls();
+
+  const response = await fetch(getRestUrl("water_entries"), {
+    method: "POST",
+    headers: {
+      ...getHeaders(),
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify([
+      {
+        profile_id: PROFILE_ID,
+        amount_ml: ENTRY_ML,
+        source,
+      },
+    ]),
   });
-  saveEntries();
-  render();
+
+  state.isMutating = false;
+  syncControls();
+
+  if (!response.ok) {
+    throw new Error(`Supabase insert failed with ${response.status}`);
+  }
+
+  await fetchEntries();
   showToast(source === "nfc" ? "Registro NFC guardado: +600 ml" : "Añadidos 600 ml");
-}
-
-function undoLastEntry() {
-  if (!state.entries.length) {
-    showToast("No hay registros para deshacer");
-    return;
-  }
-
-  state.entries.shift();
-  saveEntries();
-  render();
-  showToast("Último registro eliminado");
-}
-
-function resetEntries() {
-  const confirmed = window.confirm("Se borrarán todos los registros guardados en este iPhone.");
-  if (!confirmed) {
-    return;
-  }
-
-  state.entries = [];
-  saveEntries();
-  render();
-  showToast("Datos borrados");
 }
 
 function exportEntries() {
   const payload = {
     exportedAt: new Date().toISOString(),
     entryMl: ENTRY_ML,
+    profileId: PROFILE_ID,
     entries: state.entries,
   };
 
@@ -156,8 +194,13 @@ function renderMetrics() {
 }
 
 function renderEntries() {
+  if (state.isLoading) {
+    elements.entriesList.innerHTML = '<li class="empty-state">Cargando registros...</li>';
+    return;
+  }
+
   if (!state.entries.length) {
-    elements.entriesList.innerHTML = '<li class="empty-state">Todavía no hay registros.</li>';
+    elements.entriesList.innerHTML = '<li class="empty-state">Todavía no hay registros en Supabase.</li>';
     return;
   }
 
@@ -219,9 +262,14 @@ function renderWeekChart() {
 
 function renderNfcUrl() {
   const nfcUrl = new URL(window.location.href);
-  nfcUrl.searchParams.set("tap", "1");
+  nfcUrl.search = "";
   nfcUrl.hash = "";
+  nfcUrl.searchParams.set("tap", "1");
   elements.nfcUrl.value = nfcUrl.toString();
+}
+
+function updateSyncStatus(message) {
+  elements.syncStatus.textContent = message;
 }
 
 function showToast(message) {
@@ -231,15 +279,21 @@ function showToast(message) {
   state.toastTimer = window.setTimeout(() => elements.toast.classList.remove("visible"), 2200);
 }
 
-function handleTapFromUrl() {
+async function handleTapFromUrl() {
   const url = new URL(window.location.href);
   if (url.searchParams.get("tap") !== "1") {
     return;
   }
 
-  addEntry("nfc");
-  url.searchParams.delete("tap");
-  window.history.replaceState({}, "", url.toString());
+  try {
+    await createEntry("nfc");
+    url.searchParams.delete("tap");
+    window.history.replaceState({}, "", url.toString());
+  } catch (error) {
+    updateSyncStatus("Error de sincronización");
+    showToast("No se pudo guardar el toque NFC");
+    console.error(error);
+  }
 }
 
 function registerServiceWorker() {
@@ -255,8 +309,21 @@ function render() {
   renderNfcUrl();
 }
 
-elements.quickAddButton.addEventListener("click", () => addEntry("manual"));
-elements.undoButton.addEventListener("click", undoLastEntry);
+function syncControls() {
+  elements.quickAddButton.disabled = state.isMutating;
+  elements.exportButton.disabled = state.isLoading || state.isMutating;
+}
+
+elements.quickAddButton.addEventListener("click", async () => {
+  try {
+    await createEntry("manual");
+  } catch (error) {
+    updateSyncStatus("Error de sincronización");
+    showToast("No se pudo guardar el registro manual");
+    console.error(error);
+  }
+});
+
 elements.copyUrlButton.addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText(elements.nfcUrl.value);
@@ -267,9 +334,19 @@ elements.copyUrlButton.addEventListener("click", async () => {
     showToast("URL copiada");
   }
 });
+
 elements.exportButton.addEventListener("click", exportEntries);
-elements.resetButton.addEventListener("click", resetEntries);
 
 render();
-handleTapFromUrl();
+syncControls();
+fetchEntries()
+  .then(handleTapFromUrl)
+  .catch((error) => {
+    state.isLoading = false;
+    updateSyncStatus("Error de sincronización");
+    render();
+    syncControls();
+    showToast("Revisa la tabla y las policies de Supabase");
+    console.error(error);
+  });
 registerServiceWorker();

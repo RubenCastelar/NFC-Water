@@ -24,6 +24,7 @@
           <p class="eyebrow">Agua NFC</p>
           <h1 id="todayLiters">0.0 L</h1>
           <p class="subtitle">Hoy</p>
+          <p id="syncStatus" class="sync-status">Conectando con Supabase...</p>
         </div>
         <button id="quickAddButton" class="primary-button" type="button" aria-label="Añadir 600 mililitros">
           +600 ml
@@ -52,7 +53,6 @@
       <section class="panel">
         <div class="panel-heading">
           <h2>Últimos registros</h2>
-          <button id="undoButton" class="ghost-button" type="button">Deshacer último</button>
         </div>
         <ul id="entriesList" class="entries-list" aria-live="polite"></ul>
       </section>
@@ -72,7 +72,7 @@
         <ol class="instructions">
           <li>Añade esta web a la pantalla de inicio de tu iPhone.</li>
           <li>Graba el NFC con la URL pública de esta app terminada en <code>?tap=1</code>.</li>
-          <li>Cada vez que acerques el iPhone, la app sumará 600 ml automáticamente.</li>
+          <li>Cada vez que acerques el iPhone, se guardarán 600 ml en Supabase y verás la app actualizada.</li>
         </ol>
         <div class="url-box">
           <label for="nfcUrl">URL para grabar en el NFC</label>
@@ -85,17 +85,16 @@
 
       <section class="panel danger-panel">
         <div class="panel-heading">
-          <h2>Gestión de datos</h2>
+          <h2>Datos</h2>
         </div>
         <div class="danger-actions">
           <button id="exportButton" class="ghost-button" type="button">Exportar JSON</button>
-          <button id="resetButton" class="danger-button" type="button">Borrar todo</button>
         </div>
       </section>
     </main>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-    <script src="app.js?v=2" defer></script>
+    <script src="app.js?v=3" defer></script>
   </body>
 </html>

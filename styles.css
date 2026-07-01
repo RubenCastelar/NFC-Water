@@ -62,6 +62,7 @@ button {
 
 .eyebrow,
 .subtitle,
+.sync-status,
 .metric-label,
 .panel-caption,
 label,
@@ -96,6 +97,11 @@ h2 {
 .subtitle {
   margin-top: 0.4rem;
   font-size: 0.95rem;
+}
+
+.sync-status {
+  margin-top: 0.55rem;
+  font-size: 0.85rem;
 }
 
 .summary-grid {
@@ -167,6 +173,13 @@ h2 {
 .ghost-button:active,
 .danger-button:active {
   transform: scale(0.98);
+}
+
+.primary-button:disabled,
+.ghost-button:disabled,
+.danger-button:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
 .entries-list {
